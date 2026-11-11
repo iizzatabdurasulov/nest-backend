@@ -4,21 +4,54 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { ProductDto } from './product.dto.js';
+import { ProductDto } from './products.dto.js';
+import { randomUUID } from 'crypto';
+import { join } from 'path';
+import { mkdir, writeFile, unlink } from 'node:fs/promises';
+import type { Express } from 'express';
+
+const imageExtensions: Record<string, string> = {
+  'image/jpeg': '.jpg',
+  'image/png': '.png',
+  'image/webp': '.webp',
+};
+
+const uploadsDirectory = join(process.cwd(), 'uploads');
 
 @Injectable()
-export class ProductService {
+export class ProductsService {
   constructor(private readonly prisma: PrismaService) {}
 
   // Create product
 
-  create(data: ProductDto, userId: number) {
-    return this.prisma.product.create({
-      data: {
-        ...data,
-        userId: userId,
-      },
+  async uploadImage(file: Express.Multer.File) {
+    const filename = `${randomUUID()}${imageExtensions[file.mimetype]}`;
+    await mkdir(uploadsDirectory, { recursive: true });
+    await writeFile(join(uploadsDirectory, filename), file.buffer, {
+      flag: 'wx',
     });
+
+    return { image: `/uploads/${filename}` };
+  }
+
+  async create(data: ProductDto, userId: number, file?: Express.Multer.File) {
+    const uploaded = file ? await this.uploadImage(file) : undefined;
+    try {
+      return await this.prisma.product.create({
+        data: {
+          ...data,
+          userId,
+          image: uploaded?.image ?? data.image,
+        },
+      });
+    } catch (error) {
+      if (uploaded) {
+        await unlink(
+          join(uploadsDirectory, uploaded.image.slice('/uploads/'.length)),
+        ).catch(() => undefined);
+      }
+      throw error;
+    }
   }
 
   // Get products
