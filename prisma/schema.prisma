@@ -15,11 +15,18 @@ datasource db {
 model Product {
   id        Int      @id @default(autoincrement())
   title     String
+  desc      String    @default("")
   image     String?
+  oldPrice  String?
   price     Decimal
+  category  String   @default("Uncategorized")
+  isActive  Boolean  @default(true)
+  isSale    Boolean  @default(false)
+  views     Int      @default(0)
+  soldCount Int      @default(0)
   createdAt DateTime @default(now())
   userId    Int
-  user     User @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 }
 
 enum UserRole {
@@ -29,12 +36,12 @@ enum UserRole {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique()
-  role      UserRole @default(client)
-  password  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  products  Product[]
+  id               Int       @id @default(autoincrement())
+  email            String    @unique()
+  role             UserRole  @default(client)
+  password         String
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  products         Product[]
   refreshTokenHash String?
 }

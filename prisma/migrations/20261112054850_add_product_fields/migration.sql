@@ -1,0 +1,8 @@
+-- AlterTable
+ALTER TABLE "Product" ADD COLUMN     "category" TEXT NOT NULL DEFAULT 'Uncategorized',
+ADD COLUMN     "desc" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "isActive" BOOLEAN NOT NULL DEFAULT true,
+ADD COLUMN     "isSale" BOOLEAN NOT NULL DEFAULT false,
+ADD COLUMN     "oldPrice" TEXT,
+ADD COLUMN     "soldCount" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "views" INTEGER NOT NULL DEFAULT 0;

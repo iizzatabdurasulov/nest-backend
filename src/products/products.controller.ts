@@ -16,6 +16,7 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { CurrentUser } from '../users/user.decorator.js';
 import { ProductDto } from './products.dto.js';
+import { UpdateProductDto } from './update.product.dto.js';
 import { ProductsService } from './products.service.js';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Express } from 'express';
@@ -82,21 +83,36 @@ export class ProductsController {
   @UseGuards(AuthGuard('jwt'))
   @Delete(':id')
   delete(
-    @CurrentUser() user: { userId: number },
+    @CurrentUser() user: { userId: number; role: string },
     @Param('id', ParseIntPipe) id: number,
   ) {
-    return this.productsService.delete(id, user.userId);
+    return this.productsService.delete(id, user.userId, user.role);
   }
 
   //  Update product
   @UseGuards(AuthGuard('jwt'))
   @Patch(':id')
+  @UseInterceptors(
+    FileInterceptor('image', {
+      storage: memoryStorage(),
+      limits: { fileSize: 5 * 1024 * 1024, files: 1 },
+    }),
+  )
   update(
-    @CurrentUser() user: { userId: number },
+    @CurrentUser() user: { userId: number; role: string },
     @Param('id', ParseIntPipe) id: number,
-    @Body() body: ProductDto,
+    @Body() body: UpdateProductDto,
+    @UploadedFile(
+      new ParseFilePipeBuilder()
+        .addFileTypeValidator({
+          fileType: /^image\/(jpeg|png|webp)$/,
+          overrideMimeType: true,
+        })
+        .build({ fileIsRequired: false }),
+    )
+    file?: Express.Multer.File,
   ) {
-    return this.productsService.update(id, user.userId, body);
+    return this.productsService.update(id, user.userId, body, file, user.role);
   }
   @Post('upload')
   @UseGuards(AuthGuard('jwt'))

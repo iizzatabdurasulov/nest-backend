@@ -112,3 +112,29 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+
+## Admin panel
+
+Frontenddagi `/admin` sahifasi orqali mahsulot qo‘shish, tahrirlash, rasm yuklash
+va o‘chirish mumkin. Mavjud `admin` yoki `owner` hisobining email va paroli bilan
+kiring. Oddiy ro‘yxatdan o‘tish `client` hisobini yaratadi va admin huquqini bermaydi.
+Hisobga admin huquqini faqat baza boshqaruvchisi berishi kerak.
+
+Backend `http://localhost:8080`, frontend `http://localhost:3000` manzilida ishlaydi.
+Frontend uchun `NEXT_PUBLIC_API_URL` backend manzilini ko‘rsatadi. Token faqat Redux
+xotirasida saqlanadi; sahifa yangilanganda qayta kirish kerak. Sessiya tugasa,
+`Chiqish` tugmasini bosib qayta kiring.
+
+Admin va owner barcha mahsulotlarni tahrirlashi va o‘chirishi mumkin. Oddiy
+foydalanuvchi mahsulot API orqali faqat o‘z mahsulotini boshqarishi mumkin.
+O‘chirish panelda tasdiqlashni talab qiladi.
+
+Backendni build qilib, admin ruxsatlari va mahsulot validatsiyasi testlarini bajaring:
+
+```sh
+npm run build
+node --test test/admin.test.mjs
+```
+
+Bu testlar Prisma o‘rniga lokal test obyektidan foydalanadi, bazadagi mahsulotlarni
+o‘zgartirmaydi.

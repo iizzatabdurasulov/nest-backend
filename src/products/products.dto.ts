@@ -4,7 +4,10 @@ import {
   IsOptional,
   IsPositive,
   IsString,
+  IsBoolean,
+  IsInt,
   Matches,
+  Min,
   MinLength,
 } from 'class-validator';
 
@@ -19,9 +22,45 @@ export class ProductDto {
   price: number;
 
   @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  oldPrice?: number;
+
+  @IsOptional()
   @IsString()
   @Matches(/^\/uploads\/[0-9a-f-]+\.(jpg|png|webp)$/, {
     message: 'image must be a path returned by POST /products/upload',
   })
-  image?: string | null;
+  image?: string;
+
+  @IsOptional()
+  @IsString()
+  desc?: string;
+
+  @IsOptional()
+  @IsString()
+  category?: string;
+
+  @IsOptional()
+  @Type(() => Boolean)
+  @IsBoolean()
+  isActive?: boolean;
+
+  @IsOptional()
+  @Type(() => Boolean)
+  @IsBoolean()
+  isSale?: boolean;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  views?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  soldCount?: number;
 }

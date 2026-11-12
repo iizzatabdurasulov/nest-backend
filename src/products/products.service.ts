@@ -9,6 +9,7 @@ import { randomUUID } from 'crypto';
 import { join } from 'path';
 import { mkdir, writeFile, unlink } from 'node:fs/promises';
 import type { Express } from 'express';
+import { UpdateProductDto } from './update.product.dto.js';
 
 const imageExtensions: Record<string, string> = {
   'image/jpeg': '.jpg',
@@ -41,6 +42,8 @@ export class ProductsService {
         data: {
           ...data,
           userId,
+          oldPrice:
+            data.oldPrice == null ? data.oldPrice : String(data.oldPrice),
           image: uploaded?.image ?? data.image,
         },
       });
@@ -92,9 +95,10 @@ export class ProductsService {
   }
 
   // Delete product by id
-  async delete(productId: number, userId: number) {
+  async delete(productId: number, userId: number, role = 'client') {
+    const isAdmin = role === 'admin' || role === 'owner';
     const product = await this.prisma.product.findFirst({
-      where: { id: productId, userId: userId },
+      where: { id: productId, ...(isAdmin ? {} : { userId }) },
     });
 
     if (!product) {
@@ -112,7 +116,13 @@ export class ProductsService {
   }
 
   // Update product
-  async update(productId: number, userId: number, data: ProductDto) {
+  async update(
+    productId: number,
+    userId: number,
+    data: UpdateProductDto,
+    file?: Express.Multer.File,
+    role = 'client',
+  ) {
     const product = await this.prisma.product.findUnique({
       where: { id: productId },
     });
@@ -121,13 +131,31 @@ export class ProductsService {
       throw new NotFoundException('Product not found');
     }
 
-    if (product.userId !== userId) {
+    const isAdmin = role === 'admin' || role === 'owner';
+    if (product.userId !== userId && !isAdmin) {
       throw new ForbiddenException('You cannot update this product');
     }
 
-    return this.prisma.product.update({
-      where: { id: productId },
-      data,
-    });
+    const uploaded = file ? await this.uploadImage(file) : undefined;
+
+    try {
+      return await this.prisma.product.update({
+        where: { id: productId },
+        data: {
+          ...data,
+          oldPrice:
+            data.oldPrice == null ? data.oldPrice : String(data.oldPrice),
+          ...(uploaded && { image: uploaded.image }),
+        },
+      });
+    } catch (error) {
+      if (uploaded) {
+        await unlink(
+          join(uploadsDirectory, uploaded.image.slice('/uploads/'.length)),
+        ).catch(() => undefined);
+      }
+
+      throw error;
+    }
   }
 }
