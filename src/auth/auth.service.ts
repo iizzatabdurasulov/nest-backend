@@ -8,7 +8,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { LogInDto, RegisterDto } from './auth.dto.js';
 import { ConfigService } from '@nestjs/config';
-import { createHash } from 'crypto';
+import { createHash, randomUUID } from 'crypto';
 
 @Injectable()
 export class AuthService {
@@ -32,10 +32,13 @@ export class AuthService {
         expiresIn: '1h',
       }),
 
-      this.jwtService.signAsync(payload, {
-        secret: this.config.get('JWT_REFRESH_SECRET'),
-        expiresIn: '7d',
-      }),
+      this.jwtService.signAsync(
+        { ...payload, jti: randomUUID() },
+        {
+          secret: this.config.get('JWT_REFRESH_SECRET'),
+          expiresIn: '7d',
+        },
+      ),
     ]);
     return { accessToken, refreshToken };
   }
@@ -58,6 +61,49 @@ export class AuthService {
     return tokens;
   }
 
+  private async verifyRefreshToken(token?: string): Promise<number> {
+    if (!token) throw new UnauthorizedException('Session expired');
+    try {
+      const payload = await this.jwtService.verifyAsync<{ sub: number }>(
+        token,
+        {
+          secret: this.config.get('JWT_REFRESH_SECRET'),
+        },
+      );
+      if (!Number.isInteger(payload.sub)) throw new Error('Invalid subject');
+      return payload.sub;
+    } catch {
+      throw new UnauthorizedException('Session expired');
+    }
+  }
+
+  async refresh(token?: string) {
+    const userId = await this.verifyRefreshToken(token);
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user || user.refreshTokenHash !== this.hashToken(token!)) {
+      throw new UnauthorizedException('Session expired');
+    }
+    const accessToken = await this.jwtService.signAsync(
+      { sub: user.id, email: user.email, role: user.role },
+      { secret: this.config.get('JWT_ACCESS_SECRET'), expiresIn: '1h' },
+    );
+    return { accessToken };
+  }
+
+  async logout(token?: string) {
+    if (!token) return;
+    let userId: number;
+    try {
+      userId = await this.verifyRefreshToken(token);
+    } catch (error) {
+      if (error instanceof UnauthorizedException) return;
+      throw error;
+    }
+    await this.prisma.user.updateMany({
+      where: { id: userId, refreshTokenHash: this.hashToken(token) },
+      data: { refreshTokenHash: null },
+    });
+  }
 
   async register(dto: RegisterDto) {
     const existingUser = await this.prisma.user.findUnique({
@@ -80,14 +126,13 @@ export class AuthService {
       },
     });
 
-
-    return this.issueTokens(user)
+    return this.issueTokens(user);
   }
 
   async login(dto: LogInDto) {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
-      omit: {password: false}
+      omit: { password: false },
     });
 
     if (!user) {
@@ -100,6 +145,6 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    return this.issueTokens(user)
+    return this.issueTokens(user);
   }
 }

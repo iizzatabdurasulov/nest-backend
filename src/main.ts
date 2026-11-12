@@ -3,6 +3,7 @@ import { AppModule, ObserveInstrument } from './app.module.js';
 import { ValidationPipe } from '@nestjs/common';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'node:path';
+import { frontendOrigin } from './auth/session.js';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -16,7 +17,7 @@ async function bootstrap() {
     }),
   );
   app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads/' });
-  app.enableCors({ origin: 'http://localhost:3000' });
+  app.enableCors({ origin: frontendOrigin(), credentials: true });
   await app.listen(port);
   console.log(`Server is running on ${port}`);
 }

@@ -8,8 +8,9 @@ import { ProductDto } from './products.dto.js';
 import { randomUUID } from 'crypto';
 import { join } from 'path';
 import { mkdir, writeFile, unlink } from 'node:fs/promises';
-import type { Express } from 'express';
 import { UpdateProductDto } from './update.product.dto.js';
+import { CurrencyService } from '../currency/currency.service.js';
+import ky from 'ky';
 
 const imageExtensions: Record<string, string> = {
   'image/jpeg': '.jpg',
@@ -21,9 +22,10 @@ const uploadsDirectory = join(process.cwd(), 'uploads');
 
 @Injectable()
 export class ProductsService {
-  constructor(private readonly prisma: PrismaService) {}
-
-  // Create product
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly currencyService: CurrencyService,
+  ) {}
 
   async uploadImage(file: Express.Multer.File) {
     const filename = `${randomUUID()}${imageExtensions[file.mimetype]}`;
@@ -34,6 +36,8 @@ export class ProductsService {
 
     return { image: `/uploads/${filename}` };
   }
+
+  // Create product
 
   async create(data: ProductDto, userId: number, file?: Express.Multer.File) {
     const uploaded = file ? await this.uploadImage(file) : undefined;
@@ -59,14 +63,24 @@ export class ProductsService {
 
   // Get products
 
-  findAll() {
-    return this.prisma.product.findMany({
+  async findAll(currency: string = 'USD') {
+    const products = await this.prisma.product.findMany({
       orderBy: {
         id: 'desc',
       },
     });
-  }
 
+    if (currency === 'USD') return products;
+    const rate = await this.currencyService.getRate('USD', currency);
+
+
+    return products.map((product) => ({
+      ...product,
+      price: Number(product.price) * rate,
+      oldPrice:  product.oldPrice != null ? Number(product.oldPrice) * rate : null,
+      currency
+    }))
+  }
   // Get product by id
 
   async findOne(id: number) {
