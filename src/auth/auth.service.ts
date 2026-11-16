@@ -79,7 +79,11 @@ export class AuthService {
 
   async refresh(token?: string) {
     const userId = await this.verifyRefreshToken(token);
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      // PrismaService hides this field by default; refresh must verify it internally.
+      omit: { refreshTokenHash: false },
+    });
     if (!user || user.refreshTokenHash !== this.hashToken(token!)) {
       throw new UnauthorizedException('Session expired');
     }

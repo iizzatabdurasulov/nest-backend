@@ -10,6 +10,7 @@ import { ConfigModule } from '@nestjs/config';
 import { CurrencyService } from './currency/currency.service.js';
 import { CurrencyController } from './currency/currency.controller.js';
 import { CurrencyModule } from './currency/currency.module.js';
+import { CartModule } from './cart/cart.module.js';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -25,7 +26,8 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     UsersModule,
     AuthModule,
     ConfigModule,
-    CurrencyModule
+    CurrencyModule,
+    CartModule
   ],
   controllers: [AppController, CurrencyController],
   providers: [AppService, CurrencyService],

@@ -28,8 +28,14 @@ async function setup(t) {
   };
   const prisma = {
     user: {
-      findUnique: async ({ where }) =>
-        where.id === user.id || where.email === user.email ? { ...user } : null,
+      // Match PrismaService's global omission of password and refreshTokenHash.
+      findUnique: async ({ where, omit }) => {
+        if (where.id !== user.id && where.email !== user.email) return null;
+        const result = { ...user };
+        if (omit?.password !== false) delete result.password;
+        if (omit?.refreshTokenHash !== false) delete result.refreshTokenHash;
+        return result;
+      },
       update: async ({ data }) => Object.assign(user, data),
       updateMany: async ({ where, data }) => {
         if (
@@ -85,7 +91,16 @@ test('login sets a persistent HttpOnly cookie; a new page restores access with c
     secret: 'test-access-secret',
   });
   assert.equal(payload.role, 'owner');
-  assert.equal(restored.body.refreshToken, undefined);
+  assert.deepEqual(Object.keys(restored.body), ['accessToken']);
+  // Reloading repeatedly must keep the original refresh cookie usable.
+  for (let reload = 0; reload < 3; reload++) {
+    const next = await http
+      .post('/auth/refresh')
+      .set('Cookie', cookie.split(';')[0])
+      .set('Origin', origin)
+      .expect(201);
+    assert.deepEqual(Object.keys(next.body), ['accessToken']);
+  }
 });
 
 test('logout revokes the cookie, clears it, and is idempotent', async (t) => {

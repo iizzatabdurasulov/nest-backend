@@ -10,7 +10,6 @@ import { join } from 'path';
 import { mkdir, writeFile, unlink } from 'node:fs/promises';
 import { UpdateProductDto } from './update.product.dto.js';
 import { CurrencyService } from '../currency/currency.service.js';
-import ky from 'ky';
 
 const imageExtensions: Record<string, string> = {
   'image/jpeg': '.jpg',
@@ -172,4 +171,6 @@ export class ProductsService {
       throw error;
     }
   }
+
+
 }
