@@ -9,6 +9,7 @@ import {
   Matches,
   Min,
   MinLength,
+  ValidateIf,
 } from 'class-validator';
 
 export class ProductDto {
@@ -63,4 +64,10 @@ export class ProductDto {
   @IsInt()
   @Min(0)
   soldCount?: number;
+
+  @ValidateIf((_, value) => value !== undefined)
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  deliveryPrice?: number;
 }

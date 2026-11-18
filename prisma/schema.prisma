@@ -24,6 +24,7 @@ model Product {
   isSale    Boolean    @default(false)
   views     Int        @default(0)
   soldCount Int        @default(0)
+  deliveryPrice Decimal @default(0)
   createdAt DateTime   @default(now())
   userId    Int
   user      User       @relation(fields: [userId], references: [id])

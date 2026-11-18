@@ -74,4 +74,9 @@ export class UpdateProductDto {
   @IsInt()
   @Min(0)
   soldCount?: number;
+
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  deliveryPrice?: number;
 }

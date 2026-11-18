@@ -1,5 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { NotFoundError } from 'rxjs';
+import { subscribe } from 'diagnostics_channel';
 
 @Injectable()
 export class CartService {
@@ -32,7 +34,6 @@ export class CartService {
   }
 
   async decrementItem(userId: number, productId: number) {
-    // Guard the lower bound in the same query so concurrent requests cannot go below 1.
     return this.prisma.cartItem.updateMany({
       where: {
         productId,
@@ -44,7 +45,7 @@ export class CartService {
   }
 
   async getCart(userId: number) {
-    return this.prisma.cart.findUnique({
+    const cart = await this.prisma.cart.findUnique({
       where: { userId },
       include: {
         items: {
@@ -54,6 +55,29 @@ export class CartService {
         },
       },
     });
+
+    if (!cart) {
+      throw new NotFoundException('Cart not found');
+    }
+
+    const subTotal = cart.items.reduce(
+      (sum, item) => sum + Number(item.product.price) * item.quantity,
+      0,
+    );
+
+    const deliveryPrice = cart.items.reduce(
+      (sum, item) => sum + Number(item.product.deliveryPrice) * item.quantity,
+      0,
+    );
+
+    const totalPrice = subTotal + deliveryPrice;
+
+    return {
+      ...cart,
+      subTotal,
+      totalPrice,
+      deliveryPrice,
+    };
   }
 
   async removeItem(userId: number, productId: number) {

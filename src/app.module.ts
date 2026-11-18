@@ -11,6 +11,7 @@ import { CurrencyService } from './currency/currency.service.js';
 import { CurrencyController } from './currency/currency.controller.js';
 import { CurrencyModule } from './currency/currency.module.js';
 import { CartModule } from './cart/cart.module.js';
+import { CheckoutModule } from './checkout/checkout.module.js';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -27,7 +28,8 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     AuthModule,
     ConfigModule,
     CurrencyModule,
-    CartModule
+    CartModule,
+    CheckoutModule
   ],
   controllers: [AppController, CurrencyController],
   providers: [AppService, CurrencyService],

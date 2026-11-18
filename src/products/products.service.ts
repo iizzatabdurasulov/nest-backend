@@ -77,9 +77,12 @@ export class ProductsService {
       ...product,
       price: Number(product.price) * rate,
       oldPrice:  product.oldPrice != null ? Number(product.oldPrice) * rate : null,
+      deliveryPrice: product.deliveryPrice !== null ? Number(product.deliveryPrice)* rate : null,
       currency
     }))
   }
+
+  
   // Get product by id
 
   async findOne(id: number) {
