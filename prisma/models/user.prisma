@@ -1,0 +1,17 @@
+enum UserRole {
+  owner
+  admin
+  client
+}
+
+model User {
+  id               Int       @id @default(autoincrement())
+  email            String    @unique()
+  role             UserRole  @default(client)
+  password         String
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  products         Product[]
+  refreshTokenHash String?
+  cart             Cart?
+}
