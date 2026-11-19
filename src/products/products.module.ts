@@ -9,5 +9,6 @@ import { CurrencyModule } from '../currency/currency.module.js';
   imports: [CurrencyModule],
   controllers: [ProductsController],
   providers: [ProductsService, PrismaService],
+  exports: [ProductsService]
 })
 export class ProductsModule {}

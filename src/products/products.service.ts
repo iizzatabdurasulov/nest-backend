@@ -36,6 +36,17 @@ export class ProductsService {
     return { image: `/uploads/${filename}` };
   }
 
+
+   calculateDeliveryPrice(quantity:number, deliveryPrice: number) {
+    if(quantity !== 0 && quantity <= 10) {
+      return deliveryPrice * 2
+    } else if(quantity >= 10 && quantity <= 50) {
+      return deliveryPrice 
+    } else {
+      return deliveryPrice*0
+    }
+  }
+
   // Create product
 
   async create(data: ProductDto, userId: number, file?: Express.Multer.File) {
@@ -71,7 +82,7 @@ export class ProductsService {
 
     if (currency === 'USD') return products;
     const rate = await this.currencyService.getRate('USD', currency);
-
+       
 
     return products.map((product) => ({
       ...product,
@@ -80,6 +91,8 @@ export class ProductsService {
       deliveryPrice: product.deliveryPrice !== null ? Number(product.deliveryPrice)* rate : null,
       currency
     }))
+
+   
   }
 
   

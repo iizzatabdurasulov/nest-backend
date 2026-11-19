@@ -2,10 +2,14 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { NotFoundError } from 'rxjs';
 import { subscribe } from 'diagnostics_channel';
+import { ProductsService } from '../products/products.service.js';
 
 @Injectable()
 export class CartService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly productService: ProductsService,
+  ) {}
 
   async addToCart(userId: number, productId: number) {
     const cart = await this.prisma.cart.upsert({
@@ -44,6 +48,21 @@ export class CartService {
     });
   }
 
+  async setQuantity(userId: number, productId: number, quantity: number) {
+    const result = await this.prisma.cartItem.updateMany({
+      where: {
+        productId,
+        cart: { userId },
+        OR: [{ product: { isActive: true } }, { quantity: { gte: quantity } }],
+      },
+      data: { quantity },
+    });
+    if (!result.count) {
+      throw new NotFoundException('Cart item not found or product unavailable');
+    }
+    return result;
+  }
+
   async getCart(userId: number) {
     const cart = await this.prisma.cart.findUnique({
       where: { userId },
@@ -66,7 +85,12 @@ export class CartService {
     );
 
     const deliveryPrice = cart.items.reduce(
-      (sum, item) => sum + Number(item.product.deliveryPrice) * item.quantity,
+      (sum, item) =>
+        sum +
+        this.productService.calculateDeliveryPrice(
+          item.quantity,
+          Number(item.product.deliveryPrice),
+        ),
       0,
     );
 

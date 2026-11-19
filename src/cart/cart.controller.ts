@@ -2,6 +2,8 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
+  Body,
   Delete,
   Param,
   ParseIntPipe,
@@ -10,6 +12,7 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { CurrentUser } from '../users/user.decorator.js';
 import { CartService } from './cart.service.js';
+import { SetCartQuantityDto } from './cart.dto.js';
 
 @Controller('cart')
 @UseGuards(AuthGuard('jwt'))
@@ -35,6 +38,15 @@ export class CartController {
   @Get()
   getCart(@CurrentUser() user: { userId: number }) {
     return this.cartService.getCart(user.userId);
+  }
+
+  @Patch('items/:productId')
+  setQuantity(
+    @CurrentUser() user: { userId: number },
+    @Param('productId', ParseIntPipe) productId: number,
+    @Body() dto: SetCartQuantityDto,
+  ) {
+    return this.cartService.setQuantity(user.userId, productId, dto.quantity);
   }
 
   @Delete('items/:productId')
