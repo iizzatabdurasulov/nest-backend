@@ -1,0 +1,99 @@
+model DeliveryType {
+  id            Int                 @id @default(autoincrement())
+  name          String
+  code          String              @unique
+  description   String?
+  deliveryPrice Decimal             @db.Decimal(10, 2)
+  isFree        Boolean             @default(false)
+  isActive      Boolean             @default(true)
+  minDays       Int?
+  maxDays       Int?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  pickupPoints  PickupPoint[]
+  orders        Order[]
+  priceRules    DeliveryPriceRule[]
+}
+
+model PickupPoint {
+  id             Int          @id @default(autoincrement())
+  name           String
+  address        String
+  city           String
+  district       String?
+  workingHours   String?
+  latitude       Float?
+  longitude      Float?
+  isActive       Boolean      @default(true)
+  deliveryTypeId Int
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  deliveryType   DeliveryType @relation(fields: [deliveryTypeId], references: [id])
+  orders         Order[]
+}
+
+model DeliveryPriceRule {
+  id             Int          @id @default(autoincrement())
+  deliveryTypeId Int
+  minQuantity    Int
+  maxQuantity    Int?
+  price          Decimal      @db.Decimal(10, 2)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  deliveryType   DeliveryType @relation(fields: [deliveryTypeId], references: [id])
+}
+
+model UserAddress {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  title       String?
+  city        String
+  district    String?
+  street      String
+  house       String?
+  apartment   String?
+  landmark    String?
+  latitude    Float?
+  longitude   Float?
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User     @relation(fields: [userId], references: [id])
+  orders      Order[]
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+model Order {
+  id               Int           @id @default(autoincrement())
+  userId           Int
+  deliveryTypeId   Int?
+  pickupPointId    Int?
+  userAddressId    Int?
+  receiverName     String
+  receiverPhone    String
+  deliveryDate     DateTime?
+  deliveryPrice    Decimal       @db.Decimal(10, 2)
+  subtotal         Decimal       @db.Decimal(10, 2)
+  discount         Decimal       @db.Decimal(10, 2) @default(0)
+  totalPrice       Decimal       @db.Decimal(10, 2)
+  status           OrderStatus   @default(PENDING)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  user             User          @relation(fields: [userId], references: [id])
+  deliveryType     DeliveryType? @relation(fields: [deliveryTypeId], references: [id])
+  pickupPoint      PickupPoint?  @relation(fields: [pickupPointId], references: [id])
+  userAddress      UserAddress?  @relation(fields: [userAddressId], references: [id])
+}
